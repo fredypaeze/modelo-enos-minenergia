@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modelo ENOS — MinEnergia</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #F5F5F5; color: #3A3838; }
+
+    .header {
+      background: #3A3838;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 4px solid #FFC000;
+    }
+    .header h1 { color: #FFC000; font-size: 20px; }
+    .header p  { color: #AAAAAA; font-size: 12px; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+    .controls {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+      border-left: 4px solid #FFC000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .controls h2 { font-size: 16px; margin-bottom: 16px; color: #3A3838; }
+    .sliders { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+
+    .slider-group label {
+      display: flex; justify-content: space-between;
+      font-size: 13px; font-weight: bold; margin-bottom: 8px;
+    }
+    .slider-group label span { color: #FFC000; font-size: 16px; }
+    input[type=range] {
+      width: 100%; accent-color: #FFC000; height: 6px; cursor: pointer;
+    }
+    .slider-desc { font-size: 11px; color: #888; margin-top: 4px; }
+
+    select {
+      width: 100%; padding: 8px 12px; border: 1px solid #D9D9D9;
+      border-radius: 4px; font-size: 13px; background: white;
+      cursor: pointer; margin-top: 4px;
+    }
+
+    .kpis {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 16px; margin-bottom: 24px;
+    }
+    .kpi {
+      background: white; border-radius: 8px; padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border-top: 4px solid #D9D9D9;
+      transition: all 0.3s;
+    }
+    .kpi.alerta  { border-top-color: #A00000; }
+    .kpi.warning { border-top-color: #ED7D31; }
+    .kpi.ok      { border-top-color: #1A7A4A; }
+    .kpi.info    { border-top-color: #1F6B8E; }
+
+    .kpi-label { font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 8px; }
+    .kpi-value { font-size: 28px; font-weight: bold; color: #3A3838; }
+    .kpi-unit  { font-size: 12px; color: #888; margin-top: 4px; }
+
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+    .chart-card {
+      background: white; border-radius: 8px; padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .chart-card h3 { font-size: 14px; margin-bottom: 16px; color: #3A3838; }
+    .chart-card canvas { max-height: 250px; }
+
+    .chart-full {
+      background: white; border-radius: 8px; padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px;
+    }
+    .chart-full h3 { font-size: 14px; margin-bottom: 16px; }
+    .chart-full canvas { max-height: 200px; }
+
+    .footer {
+      background: #3A3838; color: #AAAAAA;
+      text-align: center; padding: 12px;
+      font-size: 11px; margin-top: 24px;
+    }
+
+    .badge {
+      display: inline-block; padding: 4px 10px; border-radius: 12px;
+      font-size: 11px; font-weight: bold; margin-left: 8px;
+    }
+    .badge-nino   { background: #FFF3E0; color: #ED7D31; }
+    .badge-normal { background: #E8F5EE; color: #1A7A4A; }
+    .badge-nina   { background: #EAF1F8; color: #1F6B8E; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>⚡ Modelo de Riesgo Hídrico ENOS</h1>
+    <p>Ministerio de Minas y Energía — Subdirección de Análisis y Modelamiento | Sistema eléctrico colombiano</p>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- CONTROLES -->
+  <div class="controls">
+    <h2>Parámetros del modelo</h2>
+    <div class="sliders">
+
+      <div class="slider-group">
+        <label>λ — Aversión al riesgo <span id="lbl-lambda">0.5</span></label>
+        <input type="range" id="slider-lambda" min="0" max="1" step="0.1" value="0.5">
+        <div class="slider-desc">0 = solo eficiencia &nbsp;|&nbsp; 1 = máxima seguridad</div>
+      </div>
+
+      <div class="slider-group">
+        <label>α — Nivel de cola CVaR <span id="lbl-alpha">95%</span></label>
+        <input type="range" id="slider-alpha" min="80" max="99" step="1" value="95">
+        <div class="slider-desc">Percentil de escenarios críticos a penalizar</div>
+      </div>
+
+      <div class="slider-group">
+        <label>Fase ENOS actual</label>
+        <select id="select-enos">
+          <option value="nino">🔴 El Niño (sequía)</option>
+          <option value="normal" selected>🟡 Neutro</option>
+          <option value="nina">🔵 La Niña (lluvias)</option>
+        </select>
+        <div class="slider-desc">Condiciona la distribución de aportes hídricos</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi info">
+      <div class="kpi-label">E[Costo] 6 meses</div>
+      <div class="kpi-value" id="kpi-ecosto">—</div>
+      <div class="kpi-unit">Miles de millones $</div>
+    </div>
+    <div class="kpi warning">
+      <div class="kpi-label">CVaR peor escenario</div>
+      <div class="kpi-value" id="kpi-cvar">—</div>
+      <div class="kpi-unit">Miles de millones $</div>
+    </div>
+    <div class="kpi" id="kpi-objetivo-card">
+      <div class="kpi-label">Función objetivo</div>
+      <div class="kpi-value" id="kpi-objetivo">—</div>
+      <div class="kpi-unit">E[C] + λ·CVaR</div>
+    </div>
+    <div class="kpi" id="kpi-riesgo-card">
+      <div class="kpi-label">Probabilidad de crisis</div>
+      <div class="kpi-value" id="kpi-riesgo">—</div>
+      <div class="kpi-unit">% escenarios bajo umbral</div>
+    </div>
+  </div>
+
+  <!-- GRÁFICAS -->
+  <div class="charts">
+    <div class="chart-card">
+      <h3>Función objetivo vs λ <span class="badge" id="badge-enos">El Niño</span></h3>
+      <canvas id="chart-lambda"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Comparación E[Costo] y CVaR — Normal vs ENOS</h3>
+      <canvas id="chart-comparacion"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-full">
+    <h3>Simulación Monte Carlo — Trayectorias de aportes Jul–Dic 2026</h3>
+    <canvas id="chart-montecarlo"></canvas>
+  </div>
+
+</div>
+
+<div class="footer">
+  Ministerio de Minas y Energía &nbsp;|&nbsp; Datos: XM / pydataxm &nbsp;|&nbsp; 
+  Metodología: SDDP + CVaR (Rockafellar & Uryasev 2000, Maceira et al. 2015)
+</div>
+
+<script>
+// ── DATOS DEL MODELO (calculados en Python) ──────────────
+const DATOS = {
+  nino: {
+    e_costo:  6.365,
+    cvar_95:  10.177,
+    precio:   423,
+    prob_crisis: 26.8,
+    lambdas:  [0.0, 0.2, 0.5, 0.8, 1.0],
+    objetivos:[6.365, 8.400, 11.453, 14.506, 16.542],
+    mc_p10:   [0.18, 0.15, 0.13, 0.11, 0.10, 0.12],
+    mc_p50:   [0.75, 0.73, 0.71, 0.69, 0.68, 0.70],
+    mc_p90:   [1.35, 1.32, 1.30, 1.28, 1.27, 1.29],
+  },
+  normal: {
+    e_costo:  2.226,
+    cvar_95:  4.230,
+    precio:   217,
+    prob_crisis: 14.7,
+    lambdas:  [0.0, 0.2, 0.5, 0.8, 1.0],
+    objetivos:[2.226, 3.072, 4.341, 5.610, 6.456],
+    mc_p10:   [0.42, 0.40, 0.38, 0.36, 0.35, 0.38],
+    mc_p50:   [0.98, 0.96, 0.95, 0.93, 0.92, 0.94],
+    mc_p90:   [1.65, 1.62, 1.60, 1.58, 1.57, 1.59],
+  },
+  nina: {
+    e_costo:  0.850,
+    cvar_95:  1.820,
+    precio:   150,
+    prob_crisis: 5.2,
+    lambdas:  [0.0, 0.2, 0.5, 0.8, 1.0],
+    objetivos:[0.850, 1.214, 1.760, 2.306, 2.670],
+    mc_p10:   [0.65, 0.62, 0.60, 0.58, 0.57, 0.60],
+    mc_p50:   [1.25, 1.22, 1.20, 1.18, 1.17, 1.19],
+    mc_p90:   [1.95, 1.92, 1.90, 1.88, 1.87, 1.89],
+  }
+};
+
+const MESES = ['Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const UMBRAL = 0.59;
+
+// ── CHARTS ───────────────────────────────────────────────
+let chartLambda, chartComp, chartMC;
+
+function initCharts() {
+  // Chart Lambda
+  chartLambda = new Chart(document.getElementById('chart-lambda'), {
+    type: 'line',
+    data: { labels: [], datasets: [] },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },
+      scales: {
+        x: { title: { display: true, text: 'λ', font: { size: 11 } } },
+        y: { title: { display: true, text: 'M$ (miles de millones)', font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Chart Comparación
+  chartComp = new Chart(document.getElementById('chart-comparacion'), {
+    type: 'bar',
+    data: { labels: [], datasets: [] },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },
+      scales: { y: { title: { display: true, text: 'Miles de millones $' } } }
+    }
+  });
+
+  // Chart Monte Carlo
+  chartMC = new Chart(document.getElementById('chart-montecarlo'), {
+    type: 'line',
+    data: { labels: MESES, datasets: [] },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },
+      scales: {
+        y: {
+          min: 0, max: 2.2,
+          title: { display: true, text: 'Aportes (fracción histórico)' }
+        }
+      }
+    }
+  });
+}
+
+// ── ACTUALIZAR ────────────────────────────────────────────
+function actualizar() {
+  const lambda = parseFloat(document.getElementById('slider-lambda').value);
+  const alpha  = parseFloat(document.getElementById('slider-alpha').value);
+  const fase   = document.getElementById('select-enos').value;
+  const d      = DATOS[fase];
+
+  // Labels
+  document.getElementById('lbl-lambda').textContent = lambda.toFixed(1);
+  document.getElementById('lbl-alpha').textContent  = alpha + '%';
+
+  // Interpolar objetivo para lambda actual
+  const idx = Math.round(lambda * (d.lambdas.length - 1));
+  const objetivo = d.e_costo + lambda * d.cvar_95;
+
+  // Ajustar CVaR según alpha
+  const factor = 1 + (alpha - 95) * 0.02;
+  const cvar_adj = d.cvar_95 * factor;
+
+  // KPIs
+  document.getElementById('kpi-ecosto').textContent  = d.e_costo.toFixed(2);
+  document.getElementById('kpi-cvar').textContent    = cvar_adj.toFixed(2);
+  document.getElementById('kpi-objetivo').textContent = objetivo.toFixed(2);
+  document.getElementById('kpi-riesgo').textContent  = d.prob_crisis + '%';
+
+  // Color KPI riesgo
+  const card = document.getElementById('kpi-riesgo-card');
+  card.className = 'kpi ' + (d.prob_crisis > 25 ? 'alerta' : d.prob_crisis > 15 ? 'warning' : 'ok');
+
+  // Badge ENOS
+  const badge = document.getElementById('badge-enos');
+  badge.textContent = fase === 'nino' ? '🔴 El Niño' : fase === 'nina' ? '🔵 La Niña' : '🟡 Neutro';
+  badge.className = 'badge badge-' + fase;
+
+  // Chart Lambda
+  const lambdaObjAll = d.lambdas.map(l => d.e_costo + l * cvar_adj);
+  chartLambda.data.labels = d.lambdas;
+  chartLambda.data.datasets = [
+    {
+      label: 'Función objetivo',
+      data: lambdaObjAll,
+      borderColor: '#3A3838', backgroundColor: 'rgba(58,56,56,0.05)',
+      borderWidth: 2.5, pointBackgroundColor: '#FFC000',
+      pointRadius: 6, fill: true, tension: 0.1
+    },
+    {
+      label: `E[Costo] = ${d.e_costo.toFixed(2)} B$`,
+      data: d.lambdas.map(() => d.e_costo),
+      borderColor: '#1F6B8E', borderDash: [5,5], borderWidth: 1.5,
+      pointRadius: 0, fill: false
+    },
+    {
+      label: `CVaR ${alpha}% = ${cvar_adj.toFixed(2)} B$`,
+      data: d.lambdas.map(() => cvar_adj),
+      borderColor: '#A00000', borderDash: [5,5], borderWidth: 1.5,
+      pointRadius: 0, fill: false
+    }
+  ];
+  // Marcar lambda actual
+  const puntoCurrent = d.lambdas.map((l, i) => i === Math.round(lambda*4) ? lambdaObjAll[i] : null);
+  chartLambda.data.datasets.push({
+    label: `λ = ${lambda}`,
+    data: puntoCurrent,
+    borderColor: '#ED7D31', backgroundColor: '#ED7D31',
+    pointRadius: 10, pointStyle: 'star', showLine: false
+  });
+  chartLambda.update();
+
+  // Chart Comparación
+  chartComp.data.labels = ['E[C] Normal', 'E[C] ENOS', `CVaR ${alpha}% Normal`, `CVaR ${alpha}% ENOS`];
+  chartComp.data.datasets = [{
+    label: 'Costo (Miles de millones $)',
+    data: [DATOS.normal.e_costo, d.e_costo, DATOS.normal.cvar_95, cvar_adj],
+    backgroundColor: ['#1F6B8E99', '#ED7D3199', '#1F6B8E99', '#ED7D3199'],
+    borderColor:     ['#1F6B8E',   '#ED7D31',   '#1F6B8E',   '#ED7D31'],
+    borderWidth: 2
+  }];
+  chartComp.update();
+
+  // Chart Monte Carlo
+  chartMC.data.datasets = [
+    {
+      label: 'Rango 10-90%',
+      data: d.mc_p90,
+      borderColor: 'transparent',
+      backgroundColor: fase === 'nino' ? 'rgba(237,125,49,0.15)' : 'rgba(31,107,142,0.15)',
+      fill: '+1', tension: 0.3, pointRadius: 0
+    },
+    {
+      label: 'Mediana (P50)',
+      data: d.mc_p50,
+      borderColor: fase === 'nino' ? '#ED7D31' : fase === 'nina' ? '#1F6B8E' : '#1A7A4A',
+      borderWidth: 2.5, pointRadius: 4,
+      backgroundColor: 'transparent', tension: 0.3
+    },
+    {
+      label: 'Rango 10%',
+      data: d.mc_p10,
+      borderColor: 'transparent',
+      backgroundColor: fase === 'nino' ? 'rgba(237,125,49,0.15)' : 'rgba(31,107,142,0.15)',
+      fill: false, tension: 0.3, pointRadius: 0
+    },
+    {
+      label: 'Umbral de alerta (0.59)',
+      data: MESES.map(() => UMBRAL),
+      borderColor: '#A00000', borderDash: [5,5], borderWidth: 1.5,
+      pointRadius: 0, backgroundColor: 'transparent'
+    }
+  ];
+  chartMC.update();
+}
+
+// ── EVENTOS ───────────────────────────────────────────────
+document.getElementById('slider-lambda').addEventListener('input', actualizar);
+document.getElementById('slider-alpha').addEventListener('input', actualizar);
+document.getElementById('select-enos').addEventListener('change', actualizar);
+
+// ── INIT ──────────────────────────────────────────────────
+initCharts();
+actualizar();
+</script>
+</body>
+</html>
