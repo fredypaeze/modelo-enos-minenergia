@@ -431,10 +431,10 @@
         prob_crisis: 26.8,
         lambdas: [0.0, 0.2, 0.5, 0.8, 1.0],
         objetivos: [6.365, 8.400, 11.453, 14.506, 16.542],
-        mc_p10: [0.18, 0.15, 0.13, 0.11, 0.10, 0.12],
+        mc_p10: [0.35, 0.33, 0.31, 0.29, 0.28, 0.30],
         mc_p50: [0.75, 0.73, 0.71, 0.69, 0.68, 0.70],
         mc_p90: [1.35, 1.32, 1.30, 1.28, 1.27, 1.29],
-      },
+    },
       normal: {
         e_costo: 2.226,
         cvar_95: 4.230,
@@ -497,7 +497,11 @@
         data: { labels: MESES, datasets: [] },
         options: {
           responsive: true,
-          plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 10 } } },
+            filler: { propagate: true }
+          },
           scales: {
             y: {
               min: 0, max: 2.2,
@@ -588,33 +592,61 @@
       chartComp.update();
 
       // Chart Monte Carlo
+      const colorFase = fase === 'nino' ? '#ED7D31' : fase === 'nina' ? '#1F6B8E' : '#1A7A4A';
+      const bgFase = fase === 'nino' ? 'rgba(237,125,49,0.25)' :
+        fase === 'nina' ? 'rgba(31,107,142,0.25)' : 'rgba(26,122,74,0.25)';
+
+      
+
+      chartMC.data.labels = MESES;
       chartMC.data.datasets = [
         {
-          label: 'Rango 10-90%',
+          label: 'Rango P10-P90',
           data: d.mc_p90,
           borderColor: 'transparent',
-          backgroundColor: fase === 'nino' ? 'rgba(237,125,49,0.15)' : 'rgba(31,107,142,0.15)',
-          fill: '+1', tension: 0.3, pointRadius: 0
+          backgroundColor: bgFase,
+          fill: {
+            target: 'stack',
+            above: bgFase,
+            below: bgFase
+          },
+          tension: 0.3,
+          pointRadius: 0,
+          stack: 'area'
         },
         {
           label: 'Mediana (P50)',
           data: d.mc_p50,
-          borderColor: fase === 'nino' ? '#ED7D31' : fase === 'nina' ? '#1F6B8E' : '#1A7A4A',
-          borderWidth: 2.5, pointRadius: 4,
-          backgroundColor: 'transparent', tension: 0.3
+          borderColor: colorFase,
+          borderWidth: 3,
+          pointRadius: 5,
+          pointBackgroundColor: 'white',
+          pointBorderColor: colorFase,
+          pointBorderWidth: 2,
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.3
         },
         {
-          label: 'Rango 10%',
+          label: 'Límite inferior P10',
           data: d.mc_p10,
-          borderColor: 'transparent',
-          backgroundColor: fase === 'nino' ? 'rgba(237,125,49,0.15)' : 'rgba(31,107,142,0.15)',
-          fill: false, tension: 0.3, pointRadius: 0
+          borderColor: colorFase,
+          borderWidth: 1.5,
+          borderDash: [4, 4],
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.3,
+          pointRadius: 0
         },
         {
           label: 'Umbral de alerta (0.59)',
           data: MESES.map(() => UMBRAL),
-          borderColor: '#A00000', borderDash: [5, 5], borderWidth: 1.5,
-          pointRadius: 0, backgroundColor: 'transparent'
+          borderColor: '#A00000',
+          borderDash: [6, 4],
+          borderWidth: 2,
+          pointRadius: 0,
+          backgroundColor: 'transparent',
+          fill: false
         }
       ];
       chartMC.update();
