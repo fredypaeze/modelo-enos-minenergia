@@ -124,7 +124,26 @@ async function build() {
     x:0.55,y:4.99,w:8.8,h:0.26, fontSize:10.5,bold:true,color:C.gris,fontFace:"Arial",margin:0
   });
 
-  await pres.writeFile({ fileName:"D:/Proyectos/minenergia/sddp/outputs/MinEnergia_Avance_Datos.pptx" });
+  // ── SLIDE 5: Hidro vs Térmica ──────────────
+  let s5 = pres.addSlide();
+  s5.background = { color: C.blanco };
+  addHeader(s5, pres, "Evidencia clave: cuando bajan los aportes, sube la térmica");
+  addFooter(s5, pres, "D5");
+
+  s5.addShape(pres.shapes.RECTANGLE, { x:0.4,y:0.95,w:9.2,h:0.46, fill:{color:C.gris},line:{color:C.gris} });
+  s5.addText("Durante El Niño 2023-2024 la generación térmica se triplicó. Ese sobrecosto es exactamente lo que el modelo CVaR internaliza en la función objetivo.", {
+    x:0.55,y:0.97,w:8.8,h:0.42, fontSize:11,color:C.amarillo,fontFace:"Arial",bold:true,margin:0
+  });
+
+  s5.addImage({ path:"D:/Proyectos/minenergia/sddp/outputs/hidro_vs_termo_enos.png", x:0.4,y:1.5,w:9.2,h:3.6 });
+
+  s5.addShape(pres.shapes.RECTANGLE, { x:0.4,y:4.97,w:9.2,h:0.30, fill:{color:C.amarillo},line:{color:C.amarillo} });
+  s5.addText("La relación es sistemática y cuantificable — base empírica del modelo de optimización propuesto.", {
+    x:0.55,y:4.99,w:8.8,h:0.26, fontSize:10.5,bold:true,color:C.gris,fontFace:"Arial",margin:0
+  });
+
+  
+  await pres.writeFile({ fileName:"D:/Proyectos/minenergia/sddp/outputs/MinEnergia_Avance_Datos_v2.pptx" });
   console.log("OK — guardado en outputs/MinEnergia_Avance_Datos.pptx");
 }
 build().catch(e => { console.error(e); process.exit(1); });
