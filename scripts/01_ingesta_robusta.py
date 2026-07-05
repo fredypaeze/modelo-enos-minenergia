@@ -2,6 +2,7 @@ import requests
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import pandas as pd
+import os
 
 class XMIngestor:
     def __init__(self, base_url="http://api.xm.com.co/api/lists"):
