@@ -1,0 +1,126 @@
+{
+ "generated_at": "2026-07-21T11:09:39.522003+00:00",
+ "status": "cargado",
+ "origen": "repo auto-hospedado (git pull diario)",
+ "modelo": "Simulación Hidrotérmica ENOS + CVaR",
+ "version": "v16",
+ "modelo_generado": "2026-07-05",
+ "fecha_corte": "2026-07-05",
+ "n_simulaciones": 10000,
+ "ponderado_por_horizonte": [
+  {
+   "horizonte_dias": 30,
+   "costo_base_mm": 1475.5,
+   "sobrecosto_enos_mm": 190.0,
+   "cvar95_mm": 1422.2,
+   "prob_estres_hidrico_pct": 23.3,
+   "precio_normal": 217,
+   "precio_escenario": 296.1,
+   "respaldo_termico_gwh_dia": 63.1,
+   "mix_hidro_pct": 72.2
+  },
+  {
+   "horizonte_dias": 60,
+   "costo_base_mm": 2950.9,
+   "sobrecosto_enos_mm": 443.4,
+   "cvar95_mm": 2557.2,
+   "prob_estres_hidrico_pct": 34.7,
+   "precio_normal": 217,
+   "precio_escenario": 306.4,
+   "respaldo_termico_gwh_dia": 63.8,
+   "mix_hidro_pct": 71.8
+  },
+  {
+   "horizonte_dias": 90,
+   "costo_base_mm": 4426.4,
+   "sobrecosto_enos_mm": 794.0,
+   "cvar95_mm": 3693.2,
+   "prob_estres_hidrico_pct": 46.4,
+   "precio_normal": 217,
+   "precio_escenario": 317.2,
+   "respaldo_termico_gwh_dia": 65.9,
+   "mix_hidro_pct": 70.9
+  },
+  {
+   "horizonte_dias": 180,
+   "costo_base_mm": 8852.7,
+   "sobrecosto_enos_mm": 2162.7,
+   "cvar95_mm": 7346.9,
+   "prob_estres_hidrico_pct": 64.0,
+   "precio_normal": 217,
+   "precio_escenario": 340.0,
+   "respaldo_termico_gwh_dia": 70.4,
+   "mix_hidro_pct": 69.0
+  },
+  {
+   "horizonte_dias": 360,
+   "costo_base_mm": 16279.2,
+   "sobrecosto_enos_mm": 4997.1,
+   "cvar95_mm": 13554.8,
+   "prob_estres_hidrico_pct": 92.9,
+   "precio_normal": 217,
+   "precio_escenario": 348.6,
+   "respaldo_termico_gwh_dia": 80.3,
+   "mix_hidro_pct": 64.6
+  }
+ ],
+ "escenarios_90d": [
+  {
+   "escenario": "Ponderado NOAA",
+   "sobrecosto_mm": 794.0,
+   "cvar95_mm": 3693.2,
+   "prob_estres_pct": 46.4,
+   "respaldo_gwh_dia": 65.9,
+   "orden": 0
+  },
+  {
+   "escenario": "Neutro",
+   "sobrecosto_mm": 0.0,
+   "cvar95_mm": 2564.4,
+   "prob_estres_pct": 47.6,
+   "respaldo_gwh_dia": 57.0,
+   "orden": 1
+  },
+  {
+   "escenario": "El Niño débil",
+   "sobrecosto_mm": 401.2,
+   "cvar95_mm": 2991.2,
+   "prob_estres_pct": 38.8,
+   "respaldo_gwh_dia": 60.1,
+   "orden": 2
+  },
+  {
+   "escenario": "El Niño moderado",
+   "sobrecosto_mm": 813.6,
+   "cvar95_mm": 3487.8,
+   "prob_estres_pct": 39.5,
+   "respaldo_gwh_dia": 66.0,
+   "orden": 3
+  },
+  {
+   "escenario": "El Niño fuerte",
+   "sobrecosto_mm": 1379.4,
+   "cvar95_mm": 4386.1,
+   "prob_estres_pct": 54.1,
+   "respaldo_gwh_dia": 75.0,
+   "orden": 4
+  },
+  {
+   "escenario": "El Niño muy fuerte",
+   "sobrecosto_mm": 2150.9,
+   "cvar95_mm": 5867.7,
+   "prob_estres_pct": 73.5,
+   "respaldo_gwh_dia": 85.7,
+   "orden": 5
+  }
+ ],
+ "cruce_respaldo_observado": {
+  "respaldo_requerido_gwh_dia_90d": 65.9,
+  "enficc_gas_gwh_dia": 63.7,
+  "cobertura_pct": 97.0,
+  "enficc_gas_sin_interrumpible": 45.5,
+  "cobertura_sin_interrumpible_pct": 69.0,
+  "nota": "Cruce modelo↔observado: el respaldo térmico que el modelo estocástico requiere (ponderado NOAA, 90d) vs la energía firme a gas observada (ENFICC). Si se descuenta el gas interrumpible, la cobertura cae — la restricción de combustible es el supuesto que el modelo aún no incorpora."
+ },
+ "nota": "Modelo estocástico hidrotérmico ENOS+CVaR del grupo (capa ECONÓMICA del riesgo: costo base → sobrecosto ENOS → CVaR → prima). Montecarlo sobre volumen de embalses con escenarios ENOS. Capa en validación: presentación, no alimenta el índice. Cifras en miles de millones de COP."
+}
